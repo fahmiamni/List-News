@@ -1,0 +1,405 @@
+"""Modern minimalistic UI for News Curator using CustomTkinter."""
+import customtkinter as ctk
+import webbrowser
+from datetime import datetime
+from typing import List, Callable, Optional
+from models import NewsArticle
+
+# Theme settings
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("blue")
+
+
+class CategoryBadge(ctk.CTkFrame):
+    """A colored badge showing the category."""
+    
+    CATEGORY_COLORS = {
+        "Politics": ("#E74C3C", "white"),
+        "Crime": ("#2C3E50", "white"),
+        "Economy": ("#27AE60", "white"),
+        "Sports": ("#F39C12", "white"),
+        "Technology": ("#3498DB", "white"),
+        "Entertainment": ("#9B59B6", "white"),
+        "Health": ("#E91E63", "white"),
+        "Education": ("#00BCD4", "white"),
+        "Environment": ("#4CAF50", "white"),
+        "International": ("#607D8B", "white"),
+        "Other": ("#95A5A6", "white"),
+    }
+    
+    def __init__(self, parent, category: str, **kwargs):
+        bg_color, text_color = self.CATEGORY_COLORS.get(category, ("#95A5A6", "white"))
+        
+        super().__init__(parent, fg_color=bg_color, corner_radius=10, **kwargs)
+        
+        self.label = ctk.CTkLabel(
+            self,
+            text=category,
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color=text_color
+        )
+        self.label.pack(padx=8, pady=2)
+
+
+class StateBadge(ctk.CTkFrame):
+    """A badge showing the state/location."""
+    
+    def __init__(self, parent, state: str, **kwargs):
+        # Different color for Global vs Local
+        if state == "Global":
+            bg_color, text_color = "#34495E", "white"
+        else:
+            bg_color, text_color = "#ECF0F1", "#2C3E50"
+        
+        super().__init__(parent, fg_color=bg_color, corner_radius=10, **kwargs)
+        
+        self.label = ctk.CTkLabel(
+            self,
+            text=f"📍 {state}",
+            font=ctk.CTkFont(size=10),
+            text_color=text_color
+        )
+        self.label.pack(padx=8, pady=2)
+
+
+class DateBadge(ctk.CTkFrame):
+    """A badge showing the date."""
+    
+    def __init__(self, parent, date: str, **kwargs):
+        super().__init__(parent, fg_color="#F8F9FA", corner_radius=10, **kwargs)
+        
+        self.label = ctk.CTkLabel(
+            self,
+            text=f"📅 {date}",
+            font=ctk.CTkFont(size=10),
+            text_color="#5D6D7E"
+        )
+        self.label.pack(padx=8, pady=2)
+
+
+class NewsCard(ctk.CTkFrame):
+    """A compact expandable news card component."""
+    
+    def __init__(self, parent, article: NewsArticle, **kwargs):
+        super().__init__(parent, fg_color="white", corner_radius=10, **kwargs)
+        
+        self.article = article
+        self.is_expanded = False
+        
+        # Border effect
+        self.configure(border_width=1, border_color="#E0E0E0")
+        
+        # Compact header row - Category, State, Date (single line)
+        self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.header_frame.pack(fill="x", padx=12, pady=(10, 6))
+        
+        self.category_badge = CategoryBadge(self.header_frame, article.category)
+        self.category_badge.pack(side="left")
+        
+        self.state_badge = StateBadge(self.header_frame, article.state)
+        self.state_badge.pack(side="left", padx=(6, 0))
+        
+        self.date_badge = DateBadge(self.header_frame, article.published_date)
+        self.date_badge.pack(side="right")
+        
+        # Title (more compact)
+        self.title_label = ctk.CTkLabel(
+            self,
+            text=article.title,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#2C3E50",
+            wraplength=680,
+            justify="left"
+        )
+        self.title_label.pack(anchor="w", padx=12, pady=(0, 4))
+        
+        # Summary area (clickable) - single line when collapsed
+        self.summary_frame = ctk.CTkFrame(self, fg_color="transparent", cursor="hand2")
+        self.summary_frame.pack(fill="x", padx=12, pady=(0, 6))
+        self.summary_frame.bind("<Button-1>", self._toggle_expand)
+        
+        # Collapsed view (snippet) - single line
+        display_snippet = article.summary[:80] + "..." if len(article.summary) > 80 else article.summary
+        self.snippet_label = ctk.CTkLabel(
+            self.summary_frame,
+            text=f"{display_snippet} [Click to expand]",
+            font=ctk.CTkFont(size=11),
+            text_color="#5D6D7E",
+            wraplength=680,
+            justify="left"
+        )
+        self.snippet_label.pack(anchor="w")
+        self.snippet_label.bind("<Button-1>", self._toggle_expand)
+        
+        # Expanded view (full summary) - initially hidden
+        self.full_summary_label = ctk.CTkLabel(
+            self.summary_frame,
+            text=article.full_summary,
+            font=ctk.CTkFont(size=11),
+            text_color="#2C3E50",
+            wraplength=680,
+            justify="left"
+        )
+        self.full_summary_label.bind("<Button-1>", self._toggle_expand)
+        
+        # Compact footer - Source and Link
+        self.footer_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.footer_frame.pack(fill="x", padx=12, pady=(0, 10))
+        
+        self.source_label = ctk.CTkLabel(
+            self.footer_frame,
+            text=f"🌐 {article.source}",
+            font=ctk.CTkFont(size=10),
+            text_color="#95A5A6"
+        )
+        self.source_label.pack(side="left")
+        
+        self.link_button = ctk.CTkButton(
+            self.footer_frame,
+            text="Read →",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            fg_color="#3498DB",
+            hover_color="#2980B9",
+            width=80,
+            height=24,
+            corner_radius=6,
+            command=self._open_link
+        )
+        self.link_button.pack(side="right")
+    
+    def _toggle_expand(self, event=None):
+        """Toggle between expanded and collapsed view."""
+        self.is_expanded = not self.is_expanded
+        
+        if self.is_expanded:
+            self.snippet_label.pack_forget()
+            self.full_summary_label.pack(anchor="w")
+        else:
+            self.full_summary_label.pack_forget()
+            self.snippet_label.pack(anchor="w")
+    
+    def _open_link(self):
+        """Open the article URL in browser."""
+        webbrowser.open(self.article.url)
+
+
+class NewsCuratorApp(ctk.CTk):
+    """Main application window."""
+    
+    def __init__(self, on_update_callback: Callable[[], List[NewsArticle]]):
+        super().__init__()
+        
+        self.on_update_callback = on_update_callback
+        self.articles: List[NewsArticle] = []
+        self.current_filter = "all"  # all, local, global
+        
+        # Window setup
+        self.title("News Curator")
+        self.geometry("900x700")
+        self.minsize(800, 600)
+        
+        # Main container
+        self.main_frame = ctk.CTkFrame(self, fg_color="#F5F6FA")
+        self.main_frame.pack(fill="both", expand=True)
+        
+        # Header
+        self._create_header()
+        
+        # Filter tabs
+        self._create_filter_tabs()
+        
+        # News list container - more compact scrollbar
+        self.news_container = ctk.CTkScrollableFrame(
+            self.main_frame,
+            fg_color="transparent",
+            scrollbar_button_color="#BDC3C7",
+            scrollbar_button_hover_color="#95A5A6"
+        )
+        self.news_container.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+        
+        # Status bar
+        self.status_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Click 'Update News' to fetch latest news",
+            font=ctk.CTkFont(size=11),
+            text_color="#7F8C8D"
+        )
+        self.status_label.pack(side="bottom", anchor="w", padx=15, pady=(0, 10))
+    
+    def _create_header(self):
+        """Create the app header with title and update button."""
+        self.header = ctk.CTkFrame(self.main_frame, fg_color="white", corner_radius=0)
+        self.header.pack(fill="x", padx=0, pady=0)
+        
+        # Title
+        self.title_label = ctk.CTkLabel(
+            self.header,
+            text="News Curator",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#2C3E50"
+        )
+        self.title_label.pack(side="left", padx=20, pady=15)
+        
+        # Update button
+        self.update_button = ctk.CTkButton(
+            self.header,
+            text="Update News",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            fg_color="#27AE60",
+            hover_color="#219A52",
+            height=36,
+            width=130,
+            corner_radius=8,
+            command=self._on_update_click
+        )
+        self.update_button.pack(side="right", padx=20, pady=15)
+    
+    def _create_filter_tabs(self):
+        """Create filter tabs for All/Local/Global."""
+        self.tabs_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.tabs_frame.pack(fill="x", padx=15, pady=(12, 8))
+        
+        self.tab_buttons = {}
+        tabs = [
+            ("all", "All News"),
+            ("local", "Malaysia"),
+            ("global", "Global")
+        ]
+        
+        for tab_id, tab_text in tabs:
+            btn = ctk.CTkButton(
+                self.tabs_frame,
+                text=tab_text,
+                font=ctk.CTkFont(size=12, weight="bold"),
+                fg_color="#3498DB" if tab_id == "all" else "transparent",
+                text_color="white" if tab_id == "all" else "#2C3E50",
+                hover_color="#2980B9" if tab_id == "all" else "#ECF0F1",
+                width=100,
+                height=32,
+                corner_radius=8,
+                command=lambda t=tab_id: self._on_filter_change(t)
+            )
+            btn.pack(side="left", padx=(0, 8))
+            self.tab_buttons[tab_id] = btn
+    
+    def _on_filter_change(self, filter_type: str):
+        """Handle filter tab change."""
+        self.current_filter = filter_type
+        
+        # Update button styles
+        for tab_id, btn in self.tab_buttons.items():
+            if tab_id == filter_type:
+                btn.configure(fg_color="#3498DB", text_color="white", hover_color="#2980B9")
+            else:
+                btn.configure(fg_color="transparent", text_color="#2C3E50", hover_color="#ECF0F1")
+        
+        self._refresh_display()
+    
+    def _on_update_click(self):
+        """Handle update button click."""
+        self.update_button.configure(
+            text="Updating...",
+            state="disabled",
+            fg_color="#95A5A6"
+        )
+        self.status_label.configure(text="Fetching latest news...")
+        self.update_idletasks()
+        
+        try:
+            # Call the update callback
+            self.articles = self.on_update_callback()
+            print(f"[UI] Received {len(self.articles)} articles from callback")
+            
+            # Sort by generated_date (newest first - when article first appeared in our system)
+            self.articles.sort(key=lambda x: x.generated_date, reverse=True)
+            print(f"[UI] Sorted articles by generated_date")
+            
+            self._refresh_display()
+            print(f"[UI] Display refreshed")
+            
+            self.status_label.configure(
+                text=f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {len(self.articles)} articles"
+            )
+        except Exception as e:
+            import traceback
+            print(f"[UI ERROR] {str(e)}")
+            print(traceback.format_exc())
+            self.status_label.configure(text=f"Error: {str(e)}")
+        finally:
+            self.update_button.configure(
+                text="Update News",
+                state="normal",
+                fg_color="#27AE60"
+            )
+    
+    def _refresh_display(self):
+        """Refresh the news list display."""
+        try:
+            # Clear existing cards
+            for widget in self.news_container.winfo_children():
+                widget.destroy()
+            
+            # Filter articles
+            if self.current_filter == "local":
+                filtered = [a for a in self.articles if a.is_local]
+            elif self.current_filter == "global":
+                filtered = [a for a in self.articles if not a.is_local]
+            else:
+                filtered = self.articles
+            
+            # Sort by generated_date (newest first - when article first appeared in our system)
+            filtered.sort(key=lambda x: x.generated_date, reverse=True)
+            
+            print(f"[UI] Displaying {len(filtered)} articles (filter: {self.current_filter})")
+            
+            # Show empty state if no articles
+            if not filtered:
+                self._show_empty_state()
+                return
+            
+            # Create cards with reduced padding between them
+            for i, article in enumerate(filtered):
+                try:
+                    card = NewsCard(self.news_container, article)
+                    card.pack(fill="x", pady=(0, 8))
+                except Exception as card_error:
+                    print(f"[UI ERROR] Failed to create card for article '{article.title[:30]}...': {card_error}")
+                    continue
+        except Exception as e:
+            import traceback
+            print(f"[UI ERROR] Refresh display failed: {e}")
+            print(traceback.format_exc())
+    
+    def _show_empty_state(self):
+        """Show empty state message."""
+        empty_frame = ctk.CTkFrame(self.news_container, fg_color="transparent")
+        empty_frame.pack(expand=True, fill="both")
+        
+        empty_label = ctk.CTkLabel(
+            empty_frame,
+            text="No news articles found\n\nClick 'Update News' to fetch the latest news.",
+            font=ctk.CTkFont(size=14),
+            text_color="#95A5A6",
+            justify="center"
+        )
+        empty_label.pack(expand=True)
+    
+    def load_articles(self, articles: List[NewsArticle]):
+        """Load articles into the app."""
+        # Sort by generated_date (newest first - when article first appeared in our system)
+        self.articles = sorted(articles, key=lambda x: x.generated_date, reverse=True)
+        self._refresh_display()
+        if articles:
+            newest_date = self.articles[0].fetched_date[:10] if self.articles else ""
+            self.status_label.configure(text=f"Loaded {len(articles)} articles from local storage (newest: {newest_date})")
+
+
+def run_app(on_update_callback: Callable[[], List[NewsArticle]], 
+            initial_articles: List[NewsArticle] = None):
+    """Run the News Curator application."""
+    app = NewsCuratorApp(on_update_callback)
+    
+    if initial_articles:
+        app.load_articles(initial_articles)
+    
+    app.mainloop()

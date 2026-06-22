@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    # This links your LOCAL folder to the CONTAINER folder
+    volumes:
+      - .:/app
+    # This automatically loads your .env file
+    env_file:
+      - .env
+    # Expose the Flask web port
+    ports:
+      - "5000:5000"

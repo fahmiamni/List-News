@@ -1,0 +1,109 @@
+{% if category_groups %}
+<div class="space-y-5">
+    {% for category, cat_articles in category_groups.items() %}
+    {% set show_count = [5, cat_articles|length] | min %}
+    <div class="category-section" data-total="{{ cat_articles|length }}">
+        <!-- Category Header -->
+        <div class="flex items-center gap-2 pb-1.5 mb-1 border-b border-gray-200">
+            <span class="w-1 h-4 rounded-full flex-shrink-0" style="background-color: {{ cat_articles[0].category_bg }}"></span>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-600">{{ category }}</h3>
+            <span class="cat-count text-xs text-gray-400" data-total="{{ cat_articles|length }}">({{ cat_articles|length }})</span>
+        </div>
+
+        <!-- Visible Articles (first 5) -->
+        <div>
+            {% for article in cat_articles[:5] %}
+            <div data-id="{{ article.id }}"
+                 data-url="{{ article.url }}"
+                 data-title="{{ article.title }}"
+                 data-source="{{ article.source }}"
+                 data-date="{{ article.fetched_date }}"
+                 data-category="{{ category }}"
+                 onclick="openModal(this)"
+                 class="news-row group flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer">
+                {% if article.image_url %}
+                <img src="{{ article.image_url }}"
+                     alt=""
+                     class="w-8 h-8 rounded object-cover flex-shrink-0 bg-gray-100"
+                     loading="lazy"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <span class="w-8 h-8 rounded flex-shrink-0 bg-gray-100 items-center justify-center hidden" style="display:none">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                    </svg>
+                </span>
+                {% else %}
+                <span class="w-8 h-8 rounded flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                    </svg>
+                </span>
+                {% endif %}
+                <span class="text-sm text-gray-800 group-hover:text-blue-600 transition-colors truncate flex-1 min-w-0">
+                    {{ article.title }}
+                </span>
+                <span class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0 hidden sm:inline whitespace-nowrap">{{ article.location }}</span>
+                <span class="text-xs text-gray-400 flex-shrink-0 hidden md:inline">{{ article.source }}</span>
+                <span class="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">{{ article.published_date }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Hidden Articles (6th onward) -->
+        {% if cat_articles|length > 5 %}
+        <div class="hidden-articles hidden" id="hidden-{{ loop.index }}">
+            {% for article in cat_articles[5:] %}
+            <div data-id="{{ article.id }}"
+                 data-url="{{ article.url }}"
+                 data-title="{{ article.title }}"
+                 data-source="{{ article.source }}"
+                 data-date="{{ article.fetched_date }}"
+                 data-category="{{ category }}"
+                 onclick="openModal(this)"
+                 class="news-row group flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer">
+                {% if article.image_url %}
+                <img src="{{ article.image_url }}"
+                     alt=""
+                     class="w-8 h-8 rounded object-cover flex-shrink-0 bg-gray-100"
+                     loading="lazy"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <span class="w-8 h-8 rounded flex-shrink-0 bg-gray-100 items-center justify-center hidden" style="display:none">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                    </svg>
+                </span>
+                {% else %}
+                <span class="w-8 h-8 rounded flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                    </svg>
+                </span>
+                {% endif %}
+                <span class="text-sm text-gray-800 group-hover:text-blue-600 transition-colors truncate flex-1 min-w-0">
+                    {{ article.title }}
+                </span>
+                <span class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0 hidden sm:inline whitespace-nowrap">{{ article.location }}</span>
+                <span class="text-xs text-gray-400 flex-shrink-0 hidden md:inline">{{ article.source }}</span>
+                <span class="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">{{ article.published_date }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <button onclick="toggleCategory('hidden-{{ loop.index }}', this)"
+                class="mt-1 text-xs text-blue-500 hover:text-blue-700 font-medium transition-colors">
+            Show all {{ cat_articles|length }} articles ▾
+        </button>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16">
+    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+        </svg>
+    </div>
+    <h3 class="text-lg font-semibold text-gray-700 mb-2">No news articles found</h3>
+    <p class="text-gray-500 text-sm max-w-sm mx-auto">Click the "Update News" button to fetch the latest news articles.</p>
+</div>
+{% endif %}
