@@ -118,11 +118,6 @@
         </div>
     </header>
 
-    <!-- Stats Section -->
-    <div id="stats-section" hx-get="/htmx/stats" hx-trigger="load, refresh">
-        {% include 'partials/stats.html' %}
-    </div>
-
     <!-- Filter Tabs -->
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-100 w-fit">
@@ -408,7 +403,6 @@
                 
                 if (evt.detail.successful) {
                     htmx.trigger('#news-list', 'refresh');
-                    htmx.trigger('#stats-section', 'refresh');
                     try {
                         const data = JSON.parse(evt.detail.xhr.response);
                         showToast(data.message || 'News updated!', 'success');

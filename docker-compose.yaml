@@ -10,3 +10,5 @@ services:
     # Expose the Flask web port
     ports:
       - "5000:5000"
+    #Restart services everytime pc is turn on
+    restart: always
