@@ -20,8 +20,6 @@
         .htmx-indicator {
             display: none;
         }
-        
-        /* Modal overlay */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -51,18 +49,15 @@
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
-        /* Pulse animation for button when processing */
         @keyframes pulse-ring {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
-        
         .pulse-animation {
             animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
             opacity: 0.9;
         }
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -81,76 +76,72 @@
 <body class="min-h-screen">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-14">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="max-w-6xl mx-auto px-3 sm:px-4">
+            <div class="flex items-center justify-between h-12">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30 flex-shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
                         </svg>
                     </div>
-                    <h1 class="text-xl font-bold text-gray-800 tracking-tight">News Curator</h1>
+                    <h1 class="text-base font-bold text-gray-800 tracking-tight">News Curator</h1>
+                    <span class="text-xs text-gray-400 font-medium hidden sm:inline">· {{ total_count }} articles</span>
                 </div>
-                
                 <button 
                     type="button"
                     id="update-btn"
                     hx-post="/api/update" 
                     hx-swap="none"
-                    class="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40">
-                    <!-- Loading state -->
-                    <span class="loading-content hidden items-center gap-2">
-                        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    class="group relative inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40">
+                    <span class="loading-content hidden items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         Updating...
                     </span>
-                    <!-- Default state -->
-                    <span class="default-content flex items-center gap-2">
-                        <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="default-content flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
-                        Update News
+                        Update
                     </span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Filter Tabs -->
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-100 w-fit">
-            <a href="/?filter=all" 
-               class="px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 {% if filter_type == 'all' %}bg-blue-500 text-white shadow-md shadow-blue-500/25{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
-                All News
-            </a>
-            <a href="/?filter=local" 
-               class="px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 {% if filter_type == 'local' %}bg-blue-500 text-white shadow-md shadow-blue-500/25{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
-                Malaysia
-            </a>
-            <a href="/?filter=global" 
-               class="px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 {% if filter_type == 'global' %}bg-blue-500 text-white shadow-md shadow-blue-500/25{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
-                Global
-            </a>
-        </div>
-    </div>
-
-    <!-- Time Filter -->
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-2">
-        <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400 font-medium">Time:</span>
-            <div class="flex gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
-                <button onclick="filterByTime('all')" id="tf-all" class="tf-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 bg-blue-500 text-white shadow-sm">All</button>
-                <button onclick="filterByTime('daily')" id="tf-daily" class="tf-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-white">Daily</button>
-                <button onclick="filterByTime('weekly')" id="tf-weekly" class="tf-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-white">Weekly</button>
-                <button onclick="filterByTime('monthly')" id="tf-monthly" class="tf-btn px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-white">Monthly</button>
+    <!-- Combined Filter Bar -->
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex gap-1 bg-white p-0.5 rounded-lg shadow-sm border border-gray-100">
+                <a href="/?filter=all" 
+                   class="px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 {% if filter_type == 'all' %}bg-blue-500 text-white shadow-sm{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                    All
+                </a>
+                <a href="/?filter=local" 
+                   class="px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 {% if filter_type == 'local' %}bg-blue-500 text-white shadow-sm{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                    Malaysia
+                </a>
+                <a href="/?filter=global" 
+                   class="px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 {% if filter_type == 'global' %}bg-blue-500 text-white shadow-sm{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                    Global
+                </a>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="text-[10px] text-gray-400 font-medium">Time:</span>
+                <div class="flex gap-0.5 bg-gray-50 p-0.5 rounded-lg border border-gray-100">
+                    <button onclick="filterByTime('all')" id="tf-all" class="tf-btn px-2 py-1 rounded text-[10px] font-medium transition-all duration-200 bg-blue-500 text-white shadow-sm">All</button>
+                    <button onclick="filterByTime('daily')" id="tf-daily" class="tf-btn px-2 py-1 rounded text-[10px] font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-white">Day</button>
+                    <button onclick="filterByTime('weekly')" id="tf-weekly" class="tf-btn px-2 py-1 rounded text-[10px] font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-white">Week</button>
+                    <button onclick="filterByTime('monthly')" id="tf-monthly" class="tf-btn px-2 py-1 rounded text-[10px] font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-white">Month</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- News List -->
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <main class="max-w-6xl mx-auto px-3 sm:px-4 pb-6">
         <div id="news-list" hx-get="/htmx/news-list?filter={{ filter_type }}" hx-trigger="load, refresh">
             {% include 'partials/news_list.html' %}
         </div>
@@ -159,7 +150,7 @@
     <!-- Modal -->
     <div id="modal-container"></div>
 
-    <!-- Toast Notification -->
+    <!-- Toast -->
     <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
         <div id="toast-content" class="px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
             <span id="toast-icon"></span>
@@ -168,7 +159,6 @@
     </div>
 
     <script>
-        // ===================== Toast =====================
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const content = document.getElementById('toast-content');
@@ -217,18 +207,13 @@
             container.innerHTML = `
                 <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
                     <div class="modal-card p-5" role="dialog" data-category="${escapeHtml(category)}">
-                        <!-- Header -->
                         <div class="flex items-start justify-between gap-4 mb-4">
                             <h2 class="text-base font-semibold text-gray-800 leading-snug flex-1 min-w-0">${escapeHtml(title)}</h2>
                             <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 flex-shrink-0 p-1 -m-1 rounded-lg hover:bg-gray-100 transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
-
-                        <!-- Source -->
                         <div class="text-xs text-gray-400 mb-4">${escapeHtml(source)}</div>
-
-                        <!-- Action Buttons -->
                         <div class="flex flex-col gap-2 mb-4">
                             <button id="summarize-btn" onclick="summarizeArticle('${id}')"
                                 class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-[0.98] border border-blue-200 text-blue-700 text-sm font-medium transition-all">
@@ -247,8 +232,6 @@
                                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                             </a>
                         </div>
-
-                        <!-- Summary Result -->
                         <div id="summary-result" class="hidden"></div>
                     </div>
                 </div>
@@ -274,7 +257,6 @@
             const cat = btn.closest('.modal-card')?.dataset.category || 'Other';
             const emoji = CATEGORY_EMOJI[cat] || CATEGORY_EMOJI['Other'];
 
-            // Show loading
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
             arrow.classList.add('animate-pulse');
@@ -315,20 +297,6 @@
             return div.innerHTML;
         }
 
-        // ===================== Category Expand/Collapse =====================
-        function toggleCategory(id, btn) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const isHidden = el.classList.contains('hidden');
-            el.classList.toggle('hidden');
-            if (isHidden) {
-                btn.textContent = btn.textContent.replace('Show all', 'Hide').replace(' ▾', ' ▴');
-            } else {
-                const total = el.children.length + 5;
-                btn.textContent = `Show all ${total} articles ▾`;
-            }
-        }
-
         // ===================== Time Filter =====================
         function filterByTime(period) {
             const now = new Date();
@@ -344,7 +312,6 @@
                 cutoff.setMonth(cutoff.getMonth() - 1);
             }
 
-            // Update button states
             document.querySelectorAll('.tf-btn').forEach(btn => {
                 btn.classList.remove('bg-blue-500', 'text-white', 'shadow-sm');
                 btn.classList.add('text-gray-500');
@@ -355,7 +322,6 @@
                 activeBtn.classList.remove('text-gray-500');
             }
 
-            // Filter articles
             document.querySelectorAll('.news-row').forEach(row => {
                 const dateStr = row.dataset.date;
                 if (!dateStr) { row.style.display = ''; return; }
@@ -367,7 +333,6 @@
                 }
             });
 
-            // Update category counts
             document.querySelectorAll('.category-section').forEach(sec => {
                 const visible = sec.querySelectorAll('.news-row:not([style*="display: none"])').length;
                 const countEl = sec.querySelector('.cat-count');
