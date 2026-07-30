@@ -2,6 +2,17 @@
 import requests
 from urllib.parse import urlparse
 
+_session = requests.Session()
+_session.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml",
+    "Accept-Language": "en-US,en;q=0.5",
+})
+
 
 def fetch_article_text(url: str) -> str:
     """Fetch and extract main article text from a URL.
@@ -13,18 +24,8 @@ def fetch_article_text(url: str) -> str:
     4. Meta description / og:description
     Returns the first strategy that yields enough text, or "" on failure.
     """
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0.0.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "en-US,en;q=0.5",
-    }
-
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = _session.get(url, timeout=10)
         resp.raise_for_status()
     except requests.RequestException as e:
         print(f"   [SCRAPE] Fetch failed: {e}")
