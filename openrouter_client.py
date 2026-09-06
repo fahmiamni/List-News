@@ -4,6 +4,8 @@ import json
 
 from config import OPENROUTER_API_KEY, OPENROUTER_API_URL, OPENROUTER_MODEL
 
+_session = requests.Session()
+
 
 def summarize_article(text: str) -> str:
     """Summarize article text using DeepSeek V4 Flash via OpenRouter.
@@ -48,7 +50,7 @@ def summarize_article(text: str) -> str:
     }
 
     try:
-        resp = requests.post(
+        resp = _session.post(
             OPENROUTER_API_URL,
             headers=headers,
             json=payload,
